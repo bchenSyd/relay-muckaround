@@ -1,33 +1,10 @@
-# [Relay](https://facebook.github.io/relay/) [![Build Status](https://travis-ci.org/facebook/relay.svg?branch=master)](https://travis-ci.org/facebook/relay) [![npm version](https://badge.fury.io/js/react-relay.svg)](http://badge.fury.io/js/react-relay)
 
-Relay is a JavaScript framework for building data-driven React applications.
-
-* **Declarative:** Never again communicate with your data store using an imperative API. Simply declare your data requirements using GraphQL and let Relay figure out how and when to fetch your data.
-* **Colocation:** Queries live next to the views that rely on them, so you can easily reason about your app. Relay aggregates queries into efficient network requests to fetch only what you need.
-* **Mutations:** Relay lets you mutate data on the client and server using GraphQL mutations, and offers automatic data consistency, optimistic updates, and error handling.
-
-[See how to use Relay in your own project](https://facebook.github.io/relay/docs/getting-started.html) or check out the community-driven tutorial at [Learn Relay](https://www.learnrelay.org).
-
-## Example
-
-The [relay-examples](https://github.com/relayjs/relay-examples) repository contains an implementation of [TodoMVC](http://todomvc.com/). To try it out:
-
+## a healthy flow output
 ```
-git clone https://github.com/relayjs/relay-examples.git
-cd relay-examples/todo && npm install
-npm start
+[2017-05-26T03:05:53.646Z] [INFO] flow - Path to Flow: flow
+[2017-05-26T03:05:53.714Z] [INFO] flow - [unknown]: Flow server in d:\relay-modern
+[2017-05-26T03:05:53.962Z] [INFO] flow - [ready]: Flow server in d:\relay-modern
+[2017-05-26T03:05:55.451Z] [INFO] flow - [not running]: Flow server in d:\relay-modern
+[2017-05-26T03:05:55.734Z] [INFO] flow - [init]: Flow server in d:\relay-modern
+[2017-05-26T03:06:10.390Z] [INFO] flow - [ready]: Flow server in d:\relay-modern
 ```
-
-Then, just point your browser at `http://localhost:3000`.
-
-## Contribute
-
-We actively welcome pull requests, learn how to [contribute](./CONTRIBUTING.md).
-
-## Users
-
-We have a [community-maintained list](./USERS.md) of people and projects using Relay in production.
-
-## License
-
-Relay is [BSD licensed](./LICENSE). We also provide an additional [patent grant](./PATENTS).
