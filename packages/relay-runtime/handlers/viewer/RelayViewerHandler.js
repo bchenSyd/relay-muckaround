@@ -59,6 +59,23 @@ function update(store: RecordSourceProxy, payload: HandleFieldPayload): void {
   record.setValue(null, payload.fieldKey);
   //getRelayHandleKey.js    { return '__' + fieldName + '_' + handleName; }
   record.setLinkedRecord(clientViewer, payload.handleKey);
+  /* result:
+    {
+      client:root:{
+        __id:'client:root
+        __typename:'__Root'
+        viewer: null // record.setValue(null, payload.fieldKey); server record is deleted;
+        __viewer_viewer: {__ref:'client:root:viewer'}
+      }
+      client:root:viewer  {
+        __id:'client:root:viewer'
+        __typename:'Viewer
+        user:{
+          __ref:'User:me'
+        }
+      }
+    }
+  */
 
   // Make sure the root object points to the viewer object as well
   const root = store.getRoot();
