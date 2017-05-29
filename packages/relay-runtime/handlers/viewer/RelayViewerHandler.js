@@ -57,6 +57,7 @@ function update(store: RecordSourceProxy, payload: HandleFieldPayload): void {
     store.get(VIEWER_ID) || store.create(VIEWER_ID, VIEWER_TYPE);
   clientViewer.copyFieldsFrom(serverViewer);
   record.setValue(null, payload.fieldKey);
+  //getRelayHandleKey.js    { return '__' + fieldName + '_' + handleName; }
   record.setLinkedRecord(clientViewer, payload.handleKey);
 
   // Make sure the root object points to the viewer object as well
