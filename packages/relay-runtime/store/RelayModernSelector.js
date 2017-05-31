@@ -76,7 +76,7 @@ function getSelector(
     typeof fragments[fragment.name] === 'object' &&
     fragments[fragment.name] !== null
   ) {
-    const argumentVariables = fragments[fragment.name]; //no sure about this; this will reutrn a fragment; not variables
+    const argumentVariables = fragments[fragment.name]; //bchen ;  not sure about this; this will reutrn a fragment; not variables
     const fragmentVariables = getFragmentVariables(
       fragment,
       operationVariables,
