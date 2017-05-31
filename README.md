@@ -14,3 +14,12 @@ flow output
 [2017-05-26T03:05:55.734Z] [INFO] flow - [init]: Flow server in d:\relay-modern
 [2017-05-26T03:06:10.390Z] [INFO] flow - [ready]: Flow server in d:\relay-modern
 ```
+
+
+1. each fragment *instance* (containers) has a `FragmentSpecResolver`  which is of type `RelayModernFragmentSpecResolver`  
+`class RelayModernFragmentSpecResolver implements FragmentSpecResolver`  
+2. `RelayModernFragmentSpecResolver` has a list of selector resolvers, which are of type `SelectorResolver`
+3. a `SelectorResolver` has a property called  `_selector: Selector;`, which is essentially a combination of query node (AST) + Variables. as shown below
+
+
+![](./images/selector.PNG "a fragment selector")

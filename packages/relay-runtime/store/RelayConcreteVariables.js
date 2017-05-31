@@ -39,6 +39,7 @@ function getFragmentVariables(
     variables = variables || {...argumentVariables};
     switch (definition.kind) {
       case 'LocalArgument':
+        // fragmentVariables are always the default value; the real variables used are kept at component level as _localVariables
         variables[definition.name] = definition.defaultValue;
         break;
       case 'RootArgument':

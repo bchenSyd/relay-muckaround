@@ -146,7 +146,7 @@ const buildDist = function(filename, opts, isProduction) {
 
 // Paths from package-root
 const PACKAGES = 'packages';
-const DIST = 'dist';
+const DIST = '../frankel-relay/dist';
 
 const builds = [
   {
@@ -233,7 +233,7 @@ const builds = [
 ];
 
 gulp.task('clean', function() {
-  return del(DIST);
+  return del(DIST, {force: true});
 });
 
 gulp.task('modules', function() {
