@@ -323,6 +323,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
       this._references = [];
       this._resolver = createFragmentSpecResolver(
         relay,
+        containerName,
         fragments,
         props,
         this._handleFragmentDataUpdate,
@@ -351,15 +352,18 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
       // If the environment has changed or props point to new records then
       // previously fetched data and any pending fetches no longer apply:
       // - Existing references are on the old environment.
+      // - Existing references are based on old variables.
       // - Pending fetches are for the previous records.
       if (
         this.context.relay.environment !== relay.environment ||
+        this.context.relay.variables !== relay.variables ||
         !areEqual(prevIDs, nextIDs)
       ) {
         this._release();
         this._localVariables = null;
         this._resolver = createFragmentSpecResolver(
           relay,
+          containerName,
           fragments,
           nextProps,
           this._handleFragmentDataUpdate,

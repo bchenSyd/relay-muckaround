@@ -1,4 +1,3 @@
-// @generated
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
  * All rights reserved.
@@ -7,19 +6,17 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *
- * 
- * @fullSyntaxTransform
+ * @providesModule RelayCompilerUserError
+ * @flow
+ * @format
  */
 
 'use strict';
 
-function find(array, predicate, context) {
-  for (var ii = 0; ii < array.length; ii++) {
-    if (predicate.call(context, array[ii], ii, array)) {
-      return array[ii];
-    }
+class RelayCompilerUserError extends Error {
+  constructor(message: string) {
+    super(message);
   }
-  return undefined;
 }
 
-module.exports = find;
+module.exports = RelayCompilerUserError;

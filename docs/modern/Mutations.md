@@ -27,6 +27,7 @@ commitMutation(
   },
 );
 ```
+First, let's take a look at the `environment` input. To perform the mutation on the correct `environment` with the relevant data, it's a good idea to use the `environment` used to render the components. It's accessible at `this.props.relay.environment` from the component.
 
 Now let's take a closer look at the `config`:
 
@@ -62,14 +63,14 @@ const mutation = graphql`
   }
 `;
 
-const variables = {
-  input: {
-    source,
-    storyID,
-  },
-};
-
 function markNotificationAsRead(source, storyID) {
+  const variables = {
+    input: {
+      source,
+      storyID,
+    },
+  };
+
   commitMutation(
     environment,
     {
@@ -106,3 +107,5 @@ commitMutation(
   },
 );
 ```
+
+For examples of more complex optimistic updates, including adding and removing from a list, see the [Relay Modern Todo example app](https://github.com/relayjs/relay-examples/tree/master/todo-modern).

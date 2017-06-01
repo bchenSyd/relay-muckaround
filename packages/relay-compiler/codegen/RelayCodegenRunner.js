@@ -14,6 +14,7 @@
 'use strict';
 
 const RelayCodegenWatcher = require('RelayCodegenWatcher');
+const RelayCompilerUserError = require('RelayCompilerUserError');
 
 const invariant = require('invariant');
 
@@ -178,11 +179,29 @@ class RelayCodegenRunner {
       documents,
       baseDocuments,
     );
-    const outputDirectories = await writer.writeAll();
+
+    let outputDirectories = null;
+
+    try {
+      outputDirectories = await writer.writeAll();
+    } catch (e) {
+      if (e instanceof RelayCompilerUserError) {
+        // TODO could use chalk here for red output
+        console.log('Error: ' + e.message);
+      } else {
+        throw e;
+      }
+      return true;
+    }
+
     const tWritten = Date.now();
 
     function combineChanges(accessor) {
       const combined = [];
+      invariant(
+        outputDirectories,
+        'RelayCodegenRunner: Expected outputDirectories to be set',
+      );
       for (const dir of outputDirectories.values()) {
         combined.push(...accessor(dir.changes));
       }
@@ -247,14 +266,19 @@ class RelayCodegenRunner {
         this.parserWriters[parserName].forEach(writer =>
           dependentWriters.push(writer),
         );
-        if (!this.parsers[parserName]) {
-          // have to load the parser and make sure all of its dependents are set
-          await this.parseEverything(parserName);
-        } else {
-          this.parseFileChanges(parserName, files);
-        }
 
-        await Promise.all(dependentWriters.map(writer => this.write(writer)));
+        try {
+          if (!this.parsers[parserName]) {
+            // have to load the parser and make sure all of its dependents are set
+            await this.parseEverything(parserName);
+          } else {
+            this.parseFileChanges(parserName, files);
+          }
+          await Promise.all(dependentWriters.map(writer => this.write(writer)));
+        } catch (error) {
+          console.log('Error: ' + error);
+        }
+        console.log('Watching for changes to %s...', parserName);
       },
     );
     console.log('Watching for changes to %s...', parserName);
