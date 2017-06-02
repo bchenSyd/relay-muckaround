@@ -8,11 +8,10 @@
   "repository": "facebook/relay",
   "scripts": {
     "build": "gulp",
-    "jest": "NODE_ENV=test jest \"$@\"",
     "lint": "eslint .",
     "prepublish": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json && npm run build",
     "prettier": "find . -name node_modules -prune -or -name '*.js' -print | xargs grep -l '@format' | xargs prettier --single-quote --trailing-comma all --no-bracket-spacing --jsx-bracket-same-line --parser flow --write",
-    "test": "f() { EXIT=0; npm run typecheck || EXIT=$?; npm run jest \"$@\" || EXIT=$?; exit $EXIT; }; f",
+    "test": "jest ReactRelayRefetchContainer",
     "typecheck": "flow check",
     "debug":"node --debug-brk   node_modules/jest/bin/jest.js --runInBand RelayViewerHandler "
   },
@@ -93,8 +92,8 @@
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayPaginationContainer-test.js",
-      "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayQueryRenderer-test.js",
-      "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayRefetchContainer-test.js"
+      "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayQueryRenderer-test.js"
+      
     ],
     "timers": "fake",
     "transform": {

@@ -1,3 +1,24 @@
+## how does flow work? 
+flow must work with babel-core 
+this whole project is writting in es6 syntax (destruction assignmnet, spread and rest, class property transform... all es6 features)
+we just not using `import/export` but rather `require` instead in favor of `flow` syntax
+
+for a normal `react` project
+```
+npm ls babel-preset-flow
+D:\learn-relay\relay-modern
+`-- babel-preset-react@6.24.1
+  `-- babel-preset-flow@6.23.0
+```
+
+for `react-relay` (which is also a `react1` application, but deeply customized)
+```
+$ npm ls | grep flow
++-- babel-plugin-transform-flow-strip-types@6.22.0
+| `-- babel-plugin-syntax-flow@6.18.0
++-- eslint-plugin-flowtype@2.30.4
++-- flow-bin@0.46.0 invalid
+```
 ## a healthy flow output
 terminal
 flow on centOS works fine. on windows git-bash, the behavior is a bit unpredictable (keeps restarting ..etc)

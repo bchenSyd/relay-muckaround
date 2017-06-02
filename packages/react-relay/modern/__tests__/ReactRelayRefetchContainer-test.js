@@ -134,7 +134,8 @@ describe('ReactRelayRefetchContainer', () => {
     );
   });
 
-  it('generates a name for containers', () => {
+  it.only('generates a name for containers', () => {
+    console.log('hello')
     expect(TestContainer.displayName).toBe('Relay(TestComponent)');
   });
 
