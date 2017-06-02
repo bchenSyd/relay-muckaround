@@ -93,7 +93,6 @@
     "testPathIgnorePatterns": [
       "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayPaginationContainer-test.js",
       "<rootDir>/packages/react-relay/modern/__tests__/ReactRelayQueryRenderer-test.js"
-      
     ],
     "timers": "fake",
     "transform": {
