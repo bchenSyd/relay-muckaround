@@ -28,6 +28,7 @@ import type {
   QueryPayload,
   RelayResponsePayload,
   SubscribeFunction,
+  SyncOrPromise,
   UploadableMap,
 } from 'RelayNetworkTypes';
 import type {Observer} from 'RelayStoreTypes';
@@ -43,10 +44,31 @@ function create(fetch: FetchFunction, subscribe?: SubscribeFunction): Network {
     variables: Variables,
     cacheConfig?: ?CacheConfig,
     uploadables?: UploadableMap,
-  ): Promise<RelayResponsePayload> {
-    return fetch(operation, variables, cacheConfig, uploadables).then(payload =>
-      normalizePayload(operation, variables, payload),
-    );
+  ): SyncOrPromise<RelayResponsePayload> {
+    const onSuccess = payload =>
+      normalizePayload(operation, variables, payload);
+    const response = fetch(operation, variables, cacheConfig, uploadables);
+    switch (response.kind) {
+      case 'promise':
+        return {
+          kind: 'promise',
+          promise: response.promise.then(onSuccess),
+        };
+      case 'data':
+        return {
+          kind: 'data',
+          data: (response.data && onSuccess(response.data)) || null,
+        };
+      case 'error':
+        return response;
+      default:
+        (response.kind: empty);
+        invariant(
+          false,
+          'RelayNetwork: unsupported response kind `%s`',
+          response.kind,
+        );
+    }
   }
 
   function requestStream(
@@ -89,30 +111,44 @@ function create(fetch: FetchFunction, subscribe?: SubscribeFunction): Network {
     }
 
     let isDisposed = false;
-    fetch(operation, variables, cacheConfig)
-      .then(
-        payload => {
-          if (isDisposed) {
-            return;
-          }
-          let relayPayload;
-          try {
-            relayPayload = normalizePayload(operation, variables, payload);
-          } catch (err) {
-            onError && onError(err);
-            return;
-          }
-          onNext && onNext(relayPayload);
-          onCompleted && onCompleted();
-        },
-        error => {
-          if (isDisposed) {
-            return;
-          }
-          onError && onError(error);
-        },
-      )
-      .catch(rethrow);
+    const onRequestSuccess = payload => {
+      if (isDisposed) {
+        return;
+      }
+      let relayPayload;
+      try {
+        relayPayload = normalizePayload(operation, variables, payload);
+      } catch (err) {
+        onError && onError(err);
+        return;
+      }
+      onNext && onNext(relayPayload);
+      onCompleted && onCompleted();
+    };
+
+    const onRequestError = error => {
+      if (isDisposed) {
+        return;
+      }
+      onError && onError(error);
+    };
+
+    const requestResponse = fetch(operation, variables, cacheConfig);
+    switch (requestResponse.kind) {
+      case 'data':
+        onRequestSuccess(requestResponse.data);
+        break;
+      case 'error':
+        onRequestError(requestResponse.error);
+        break;
+      case 'promise':
+        requestResponse.promise.then(onRequestSuccess, onRequestError);
+        return {
+          dispose() {
+            isDisposed = true;
+          },
+        };
+    }
     return {
       dispose() {
         isDisposed = true;
@@ -148,16 +184,30 @@ function doFetchWithPolling(
     }
   };
   function poll() {
-    request(operation, variables, {force: true}).then(
-      payload => {
-        onNext && onNext(payload);
-        timeout = setTimeout(poll, pollInterval);
-      },
-      error => {
-        dispose();
-        onError && onError(error);
-      },
-    );
+    const requestResponse = request(operation, variables, {force: true});
+    const onRequestSuccess = payload => {
+      onNext && onNext(payload);
+      timeout = setTimeout(poll, pollInterval);
+    };
+
+    const onRequestError = error => {
+      dispose();
+      onError && onError(error);
+    };
+    switch (requestResponse.kind) {
+      case 'data':
+        onRequestSuccess(requestResponse.data);
+        break;
+      case 'error':
+        onRequestError(requestResponse.error);
+        break;
+      case 'promise':
+        requestResponse.promise
+          .then(payload => {
+            onRequestSuccess(payload);
+          }, onRequestError)
+          .catch(rethrow);
+    }
   }
   poll();
 
