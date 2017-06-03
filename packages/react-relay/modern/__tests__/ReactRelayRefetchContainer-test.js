@@ -134,8 +134,7 @@ describe('ReactRelayRefetchContainer', () => {
     );
   });
 
-  it.only('generates a name for containers', () => {
-    console.log('hello')
+  it('generates a name for containers', () => {
     expect(TestContainer.displayName).toBe('Relay(TestComponent)');
   });
 
@@ -151,7 +150,8 @@ describe('ReactRelayRefetchContainer', () => {
     );
   });
 
-  it('passes non-fragment props to the component', () => {
+  it.only('passes non-fragment props to the component', () => {
+    console.log('get started');
     ReactTestRenderer.create(
       <ContextSetter environment={environment} variables={variables}>
         <TestContainer bar={1} foo={'foo'} />
@@ -164,6 +164,7 @@ describe('ReactRelayRefetchContainer', () => {
       relay: {
         environment: jasmine.any(Object),
         refetch: jasmine.any(Function),
+        getVariables:jasmine.any(Function),
       },
       user: null,
     });
