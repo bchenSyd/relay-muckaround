@@ -18,17 +18,18 @@ const React = require('React');
 const ReactRelayRefetchContainer = require('ReactRelayRefetchContainer');
 const ReactRelayPropTypes = require('ReactRelayPropTypes');
 const ReactTestRenderer = require('ReactTestRenderer');
-const {createMockEnvironment} = require('RelayModernMockEnvironment');
+const { createMockEnvironment } = require('RelayModernMockEnvironment');
 const RelayModernTestUtils = require('RelayModernTestUtils');
-const {createOperationSelector} = require('RelayModernOperationSelector');
+const { createOperationSelector } = require('RelayModernOperationSelector');
 
-const {ROOT_ID} = require('RelayStoreUtils');
+const { ROOT_ID } = require('RelayStoreUtils');
 
 describe('ReactRelayRefetchContainer', () => {
   let TestComponent;
   let TestContainer;
   let UserFragment;
   let UserQuery;
+  let RefetchQuery;
 
   let environment;
   let refetch;
@@ -39,29 +40,29 @@ describe('ReactRelayRefetchContainer', () => {
     constructor(props) {
       super();
       // eslint-disable-next-line no-shadow
-      const {environment, variables} = props;
-      this.relay = {environment, variables};
-      this.state = {props: null};
+      const { environment, variables } = props;
+      this.relay = { environment, variables };
+      this.state = { props: null };
     }
     componentWillReceiveProps(nextProps) {
       // eslint-disable-next-line no-shadow
-      const {environment, variables} = nextProps;
+      const { environment, variables } = nextProps;
       if (
         environment !== this.relay.environment ||
         variables !== this.relay.variables
       ) {
-        this.relay = {environment, variables};
+        this.relay = { environment, variables };
       }
     }
     getChildContext() {
-      return {relay: this.relay};
+      return { relay: this.relay };
     }
     setProps(props) {
-      this.setState({props});
+      this.setState({ props });
     }
     setContext(env, vars) {
-      this.relay = {environment: env, variables: vars};
-      this.setState({context: {environment: env, variables: vars}});
+      this.relay = { environment: env, variables: vars };
+      this.setState({ context: { environment: env, variables: vars } });
     }
     render() {
       const child = React.Children.only(this.props.children);
@@ -75,12 +76,21 @@ describe('ReactRelayRefetchContainer', () => {
     relay: ReactRelayPropTypes.Relay,
   };
 
+  const createTestContainer = graphqlQuery => ReactRelayRefetchContainer.createContainer(
+    TestComponent,
+    {
+      user: () => UserFragment,
+    },
+    graphqlQuery,
+  );
+
+
   beforeEach(() => {
     jest.resetModules();
     jest.addMatchers(RelayModernTestUtils.matchers);
 
     environment = createMockEnvironment();
-    ({UserFragment, UserQuery} = environment.mock.compile(
+    ({ UserFragment, UserQuery, RefetchQuery } = environment.mock.compile(
       `
       query UserQuery(
         $id: ID!
@@ -96,6 +106,14 @@ describe('ReactRelayRefetchContainer', () => {
         id
         name @include(if: $cond)
       }
+
+      query RefetchQuery(
+        $id: ID!, $cond: Boolean!
+      ) {
+        node(id: $id) {
+          ...UserFragment @arguments(cond: $cond)
+        }
+      }
     `,
     ));
 
@@ -106,16 +124,8 @@ describe('ReactRelayRefetchContainer', () => {
     variables = {};
     TestComponent = render;
     TestComponent.displayName = 'TestComponent';
-    TestContainer = ReactRelayRefetchContainer.createContainer(
-      TestComponent,
-      {
-        user: () => UserFragment,
-      },
-      UserQuery,
-    );
-
     // Pre-populate the store with data
-    environment.commitPayload(createOperationSelector(UserQuery, {id: '4'}), {
+    environment.commitPayload(createOperationSelector(UserQuery, { id: '4' }), {
       node: {
         id: '4',
         __typename: 'User',
@@ -123,7 +133,7 @@ describe('ReactRelayRefetchContainer', () => {
       },
     });
     environment.commitPayload(
-      createOperationSelector(UserQuery, {id: '842472'}),
+      createOperationSelector(UserQuery, { id: '842472' }),
       {
         node: {
           id: '842472',
@@ -135,6 +145,10 @@ describe('ReactRelayRefetchContainer', () => {
   });
 
   describe(' Basics ', () => {
+    beforeEach(() => {
+      TestContainer = createTestContainer(UserQuery);
+    });
+
     it('generates a name for containers', () => {
       expect(TestContainer.displayName).toBe('Relay(TestComponent)');
     });
@@ -146,13 +160,12 @@ describe('ReactRelayRefetchContainer', () => {
         });
       }).toFailInvariant(
         'Could not create Relay Container for `TestComponent`. ' +
-          'The value of fragment `foo` was expected to be a fragment, ' +
-          'got `null` instead.',
+        'The value of fragment `foo` was expected to be a fragment, ' +
+        'got `null` instead.',
       );
     });
 
     it('passes non-fragment props to the component', () => {
-      console.log('get started');
       ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
           <TestContainer bar={1} foo={'foo'} />
@@ -165,7 +178,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
         user: null,
       });
@@ -185,7 +198,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
         user: null,
       });
@@ -197,7 +210,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
 
       ReactTestRenderer.create(
@@ -215,7 +228,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
       });
       // Subscribes for updates
@@ -228,7 +241,7 @@ describe('ReactRelayRefetchContainer', () => {
         },
         node: UserFragment,
         seenRecords: jasmine.any(Object),
-        variables: {cond: true},
+        variables: { cond: true },
       });
     });
 
@@ -236,7 +249,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
 
       ReactTestRenderer.create(
@@ -252,7 +265,7 @@ describe('ReactRelayRefetchContainer', () => {
       callback({
         dataID: '4',
         node: UserFragment,
-        variables: {cond: true},
+        variables: { cond: true },
         data: {
           id: '4',
           name: 'Mark', // !== 'Zuck'
@@ -273,7 +286,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
       });
     });
@@ -282,7 +295,7 @@ describe('ReactRelayRefetchContainer', () => {
       let userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
@@ -296,7 +309,7 @@ describe('ReactRelayRefetchContainer', () => {
       userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '842472'},
+        variables: { id: '842472' },
       }).data.node;
       instance.getInstance().setProps({
         user: userPointer,
@@ -312,7 +325,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
       });
       // Container subscribes for updates on new props
@@ -325,7 +338,7 @@ describe('ReactRelayRefetchContainer', () => {
         },
         node: UserFragment,
         seenRecords: jasmine.any(Object),
-        variables: {cond: true},
+        variables: { cond: true },
       });
     });
 
@@ -333,7 +346,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
@@ -345,7 +358,7 @@ describe('ReactRelayRefetchContainer', () => {
       environment.subscribe.mockClear();
 
       // Update the variables in context
-      const newVariables = {id: '4'};
+      const newVariables = { id: '4' };
       instance.getInstance().setContext(environment, newVariables);
 
       // New data & variables are passed to component
@@ -358,7 +371,7 @@ describe('ReactRelayRefetchContainer', () => {
         relay: {
           environment: jasmine.any(Object),
           refetch: jasmine.any(Function),
-          getVariables:jasmine.any(Function),
+          getVariables: jasmine.any(Function),
         },
       });
       // Container subscribes for updates on new props
@@ -371,7 +384,7 @@ describe('ReactRelayRefetchContainer', () => {
         },
         node: UserFragment,
         seenRecords: jasmine.any(Object),
-        variables: {cond: true},
+        variables: { cond: true },
       });
     });
 
@@ -379,7 +392,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
@@ -403,7 +416,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const scalar = 42;
       const fn = () => null;
@@ -432,7 +445,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const scalar = 42;
       const fn = () => null;
@@ -466,7 +479,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const scalar = 42;
       const fn = () => null;
@@ -499,7 +512,7 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
       const instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
@@ -528,23 +541,25 @@ describe('ReactRelayRefetchContainer', () => {
     });
   });
 
-  describe('refetch()', () => {
+  describe.only('refetch()', () => {
     let instance;
     let references;
 
     beforeEach(() => {
+      TestContainer = createTestContainer(RefetchQuery);
       references = [];
       environment.retain = () => {
         const dispose = jest.fn();
-        const ref = {dispose};
+        const ref = { dispose };
         references.push(ref);
         return ref;
       };
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'},
+        variables: { id: '4' },
       }).data.node;
+      
       instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
           <TestContainer user={userPointer} />
@@ -557,7 +572,7 @@ describe('ReactRelayRefetchContainer', () => {
         cond: false,
         id: '4',
       };
-      const fetchedVariables = {id: '4'};
+      const fetchedVariables = { id: '4' };
       refetch(refetchVariables, null, jest.fn());
       expect(environment.mock.isLoading(UserQuery, fetchedVariables)).toBe(
         true,
@@ -653,9 +668,9 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'}, // same user
+        variables: { id: '4' }, // same user
       }).data.node;
-      instance.getInstance().setProps({user: userPointer});
+      instance.getInstance().setProps({ user: userPointer });
       expect(dispose).not.toBeCalled();
     });
 
@@ -669,9 +684,9 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '842472'}, // different user
+        variables: { id: '842472' }, // different user
       }).data.node;
-      instance.getInstance().setProps({user: userPointer});
+      instance.getInstance().setProps({ user: userPointer });
       expect(dispose).toBeCalled();
     });
 
@@ -693,9 +708,9 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '4'}, // same user
+        variables: { id: '4' }, // same user
       }).data.node;
-      instance.getInstance().setProps({user: userPointer});
+      instance.getInstance().setProps({ user: userPointer });
       expect(references.length).toBe(1);
       expect(references[0].dispose).not.toBeCalled();
     });
@@ -718,9 +733,9 @@ describe('ReactRelayRefetchContainer', () => {
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
         node: UserQuery.fragment,
-        variables: {id: '842472'}, // different user
+        variables: { id: '842472' }, // different user
       }).data.node;
-      instance.getInstance().setProps({user: userPointer});
+      instance.getInstance().setProps({ user: userPointer });
       expect(references.length).toBe(1);
       expect(references[0].dispose).toBeCalled();
     });
