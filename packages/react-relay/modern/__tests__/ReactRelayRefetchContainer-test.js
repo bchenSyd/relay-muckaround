@@ -33,6 +33,7 @@ describe('ReactRelayRefetchContainer', () => {
 
   let environment;
   let refetch;
+  let getVariables;
   let render;
   let variables;
 
@@ -139,6 +140,7 @@ describe('ReactRelayRefetchContainer', () => {
 
     render = jest.fn(props => {
       refetch = props.relay.refetch;
+      getVariables = props.relay.getVariables;
       return <div />;
     });
     variables = {};
@@ -604,6 +606,32 @@ describe('ReactRelayRefetchContainer', () => {
             __typename: 'User',
           },
         },
+      });
+    });
+
+    it('getVariables()', async () => {
+      expect.assertions(2);
+      let fragmentVariables = getVariables();
+      expect(fragmentVariables).toEqual({
+        cond: true
+      });
+      const callback = jest.fn();
+      variables = {
+        cond: false,
+        id: '4',
+      };
+      refetch(variables, null, callback);
+      await environment.mock.resolve(RefetchQuery, {
+        data: {
+          node: {
+            id: '4',
+            __typename: 'User',
+          },
+        },
+      });
+      fragmentVariables = getVariables();
+      expect(fragmentVariables).toEqual({
+        cond: false
       });
     });
 
