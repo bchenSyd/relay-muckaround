@@ -76,14 +76,34 @@ describe('ReactRelayRefetchContainer', () => {
     relay: ReactRelayPropTypes.Relay,
   };
 
-  const createTestContainer = graphqlQuery => ReactRelayRefetchContainer.createContainer(
-    TestComponent,
-    {
-      user: () => UserFragment,
-    },
-    graphqlQuery,
-  );
-
+  const _setUpContainerAndStore = graphqlQuery => {
+    TestContainer = ReactRelayRefetchContainer.createContainer(
+      TestComponent,
+      {
+        user: () => UserFragment,
+      },
+      graphqlQuery,
+    );
+    // Pre-populate the store with data
+    environment.commitPayload(createOperationSelector(graphqlQuery, 
+    graphqlQuery === RefetchQuery ? { id: '4', cond: true } : { id: '4' } ), {
+      node: {
+        id: '4',
+        __typename: 'User',
+        name: 'Zuck',
+      },
+    });
+    environment.commitPayload(createOperationSelector(graphqlQuery, 
+      graphqlQuery === RefetchQuery ? { id: '842472', cond: true } : { id: '842472' } ),
+      {
+        node: {
+          id: '842472',
+          __typename: 'User',
+          name: 'Joe',
+        },
+      },
+    );
+  };
 
   beforeEach(() => {
     jest.resetModules();
@@ -124,29 +144,29 @@ describe('ReactRelayRefetchContainer', () => {
     variables = {};
     TestComponent = render;
     TestComponent.displayName = 'TestComponent';
-    // Pre-populate the store with data
-    environment.commitPayload(createOperationSelector(UserQuery, { id: '4' }), {
-      node: {
-        id: '4',
-        __typename: 'User',
-        name: 'Zuck',
-      },
-    });
-    environment.commitPayload(
-      createOperationSelector(UserQuery, { id: '842472' }),
-      {
-        node: {
-          id: '842472',
-          __typename: 'User',
-          name: 'Joe',
-        },
-      },
-    );
   });
 
   describe(' Basics ', () => {
     beforeEach(() => {
-      TestContainer = createTestContainer(UserQuery);
+      _setUpContainerAndStore(UserQuery);
+      // Pre-populate the store with data
+      environment.commitPayload(createOperationSelector(UserQuery, { id: '4' }), {
+        node: {
+          id: '4',
+          __typename: 'User',
+          name: 'Zuck',
+        },
+      });
+      environment.commitPayload(
+        createOperationSelector(UserQuery, { id: '842472' }),
+        {
+          node: {
+            id: '842472',
+            __typename: 'User',
+            name: 'Joe',
+          },
+        },
+      );
     });
 
     it('generates a name for containers', () => {
@@ -544,9 +564,10 @@ describe('ReactRelayRefetchContainer', () => {
   describe.only('refetch()', () => {
     let instance;
     let references;
-
+    
     beforeEach(() => {
-      TestContainer = createTestContainer(RefetchQuery);
+      _setUpContainerAndStore(RefetchQuery);
+
       references = [];
       environment.retain = () => {
         const dispose = jest.fn();
@@ -556,10 +577,10 @@ describe('ReactRelayRefetchContainer', () => {
       };
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
-        node: UserQuery.fragment,
-        variables: { id: '4' },
+        node: RefetchQuery.fragment,
+        variables: { id: '4', cond: true },
       }).data.node;
-      
+
       instance = ReactTestRenderer.create(
         <ContextSetter environment={environment} variables={variables}>
           <TestContainer user={userPointer} />
@@ -572,12 +593,11 @@ describe('ReactRelayRefetchContainer', () => {
         cond: false,
         id: '4',
       };
-      const fetchedVariables = { id: '4' };
       refetch(refetchVariables, null, jest.fn());
-      expect(environment.mock.isLoading(UserQuery, fetchedVariables)).toBe(
+      expect(environment.mock.isLoading(RefetchQuery, refetchVariables)).toBe(
         true,
       );
-      environment.mock.resolve(UserQuery, {
+      environment.mock.resolve(RefetchQuery, {
         data: {
           node: {
             id: '4',
@@ -595,7 +615,7 @@ describe('ReactRelayRefetchContainer', () => {
         id: '4',
       };
       refetch(variables, null, callback);
-      await environment.mock.resolve(UserQuery, {
+      await environment.mock.resolve(RefetchQuery, {
         data: {
           node: {
             id: '4',
@@ -616,7 +636,7 @@ describe('ReactRelayRefetchContainer', () => {
       };
       refetch(variables, null, callback);
       const error = new Error('oops');
-      await environment.mock.reject(UserQuery, error);
+      await environment.mock.reject(RefetchQuery, error);
       expect(callback.mock.calls.length).toBe(1);
       expect(callback).toBeCalledWith(error);
     });
@@ -631,7 +651,7 @@ describe('ReactRelayRefetchContainer', () => {
       };
       refetch(variables, null, jest.fn());
       expect(render.mock.calls.length).toBe(1);
-      await environment.mock.resolve(UserQuery, {
+      await environment.mock.resolve(RefetchQuery, {
         data: {
           node: {
             id: '4',
@@ -654,7 +674,7 @@ describe('ReactRelayRefetchContainer', () => {
       };
       refetch(variables, null, jest.fn());
       expect(render.mock.calls.length).toBe(1);
-      await environment.mock.reject(UserQuery, new Error('oops'));
+      await environment.mock.reject(RefetchQuery, new Error('oops'));
       expect(render.mock.calls.length).toBe(1);
     });
 
@@ -667,8 +687,8 @@ describe('ReactRelayRefetchContainer', () => {
       const dispose = environment.streamQuery.mock.dispose;
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
-        node: UserQuery.fragment,
-        variables: { id: '4' }, // same user
+        node: RefetchQuery.fragment,
+        variables: { id: '4', cond: true }, // same user
       }).data.node;
       instance.getInstance().setProps({ user: userPointer });
       expect(dispose).not.toBeCalled();
@@ -683,8 +703,8 @@ describe('ReactRelayRefetchContainer', () => {
       const dispose = environment.streamQuery.mock.dispose;
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
-        node: UserQuery.fragment,
-        variables: { id: '842472' }, // different user
+        node: RefetchQuery.fragment,
+        variables: { id: '842472', cond: true }, // different user
       }).data.node;
       instance.getInstance().setProps({ user: userPointer });
       expect(dispose).toBeCalled();
@@ -697,7 +717,7 @@ describe('ReactRelayRefetchContainer', () => {
         id: '4',
       };
       refetch(variables, null, jest.fn());
-      await environment.mock.resolve(UserQuery, {
+      await environment.mock.resolve(RefetchQuery, {
         data: {
           node: {
             id: '4',
@@ -707,8 +727,8 @@ describe('ReactRelayRefetchContainer', () => {
       });
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
-        node: UserQuery.fragment,
-        variables: { id: '4' }, // same user
+        node: RefetchQuery.fragment,
+        variables: { id: '4', cond: true }, // same user
       }).data.node;
       instance.getInstance().setProps({ user: userPointer });
       expect(references.length).toBe(1);
@@ -722,7 +742,7 @@ describe('ReactRelayRefetchContainer', () => {
         id: '4',
       };
       refetch(variables, null, jest.fn());
-      await environment.mock.resolve(UserQuery, {
+      await environment.mock.resolve(RefetchQuery, {
         data: {
           node: {
             id: '4',
@@ -732,8 +752,8 @@ describe('ReactRelayRefetchContainer', () => {
       });
       const userPointer = environment.lookup({
         dataID: ROOT_ID,
-        node: UserQuery.fragment,
-        variables: { id: '842472' }, // different user
+        node: RefetchQuery.fragment,
+        variables: { id: '842472', cond: true }, // different user
       }).data.node;
       instance.getInstance().setProps({ user: userPointer });
       expect(references.length).toBe(1);
