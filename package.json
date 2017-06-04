@@ -11,9 +11,9 @@
     "lint": "eslint .",
     "prepublish": "node node_modules/fbjs-scripts/node/check-dev-engines.js package.json && npm run build",
     "prettier": "find . -name node_modules -prune -or -name '*.js' -print | xargs grep -l '@format' | xargs prettier --single-quote --trailing-comma all --no-bracket-spacing --jsx-bracket-same-line --parser flow --write",
-    "test": "jest ReactRelayRefetchContainer",
+    "test": "jest  --no-cache  ",
     "typecheck": "flow check",
-    "debug": "node --debug-brk node_modules/jest/bin/jest.js --runInBand ReactRelayRefetchContainer "
+    "debug": "node --debug-brk node_modules/jest/bin/jest.js  --runInBand  "
   },
   "devDependencies": {
     "babel-cli": "6.24.1",
