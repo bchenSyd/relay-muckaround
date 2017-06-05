@@ -237,7 +237,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
         // TODO t15106389: add helper utility for fetching more data
         this._pendingRefetch = null;
         callback && callback();
-        this._resolver.setVariables(fragmentVariables);
+        this._resolver.setVariables(this._getFragmentVariables());
         this.setState({data: this._resolver.resolve()});
       };
       const onError = error => {
@@ -258,7 +258,9 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
       const reference = environment.retain(operation.root);
       this._references.push(reference);
 
-      this._localVariables = fetchVariables;
+      // Refetch Query is very likely to container extra variables in addition to fragentVarialbes
+      // those extra variables are mostly for fetching the field that this fragment is defined on
+      this._localVariables = fetchVariables; 
       if (this._pendingRefetch) {
         this._pendingRefetch.dispose();
       }
