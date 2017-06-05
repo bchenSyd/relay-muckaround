@@ -47,6 +47,7 @@ module.exports = {
     const options = assign({}, babelOptions, {
       filename: filename,
       retainLines: true,
+      sourceMaps: 'inline',
     });
     return babel.transform(src, options).code;
   },
