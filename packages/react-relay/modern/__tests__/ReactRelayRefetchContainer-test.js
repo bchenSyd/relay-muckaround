@@ -151,24 +151,6 @@ describe('ReactRelayRefetchContainer', () => {
   describe(' Basics ', () => {
     beforeEach(() => {
       _setUpContainerAndStore(UserQuery);
-      // Pre-populate the store with data
-      environment.commitPayload(createOperationSelector(UserQuery, { id: '4' }), {
-        node: {
-          id: '4',
-          __typename: 'User',
-          name: 'Zuck',
-        },
-      });
-      environment.commitPayload(
-        createOperationSelector(UserQuery, { id: '842472' }),
-        {
-          node: {
-            id: '842472',
-            __typename: 'User',
-            name: 'Joe',
-          },
-        },
-      );
     });
 
     it('generates a name for containers', () => {
@@ -563,7 +545,7 @@ describe('ReactRelayRefetchContainer', () => {
     });
   });
 
-  describe.only('refetch()', () => {
+  describe('refetch()', () => {
     let instance;
     let references;
     

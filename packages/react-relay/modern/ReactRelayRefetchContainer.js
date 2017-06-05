@@ -203,6 +203,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
 
       if (this._localVariables){
           forEachObject(fragmentVariables, (_, key) => {
+            // $FlowFixMe
              fragmentVariables[key] = this._localVariables[key];
           });
       }
