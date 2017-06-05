@@ -18,6 +18,7 @@ const RelayProfiler = require('RelayProfiler');
 const RelayPropTypes = require('RelayPropTypes');
 
 const areEqual = require('areEqual');
+const forEachObject = require('forEachObject');
 const buildReactRelayContainer = require('buildReactRelayContainer');
 const invariant = require('invariant');
 const isRelayContext = require('isRelayContext');
@@ -194,11 +195,18 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
         getVariablesFromObject,
       } = this.context.relay.environment.unstable_internal;
 
-      return this._localVariables || getVariablesFromObject(
+      const fragmentVariables = getVariablesFromObject(
         this.context.relay.variables,
         fragments,
         this.props,
       );
+
+      if (this._localVariables){
+          forEachObject(fragmentVariables, (_, key) => {
+             fragmentVariables[key] = this._localVariables[key];
+          });
+      }
+      return fragmentVariables;
     }
 
     _refetch = (

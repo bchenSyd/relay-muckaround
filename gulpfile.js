@@ -146,7 +146,7 @@ const buildDist = function(filename, opts, isProduction) {
 
 // Paths from package-root
 const PACKAGES = 'packages';
-const DIST = '../frankel-relay/dist';
+const DIST = require('./.frankel-relay');
 
 const builds = [
   {
