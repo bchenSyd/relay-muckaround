@@ -37,10 +37,15 @@ flow output
 ```
 
 
-1. each fragment *instance* (containers) has a `FragmentSpecResolver`  which is of type `RelayModernFragmentSpecResolver`  
-`class RelayModernFragmentSpecResolver implements FragmentSpecResolver`  
+1. each fragment *instance* (containers) has a `FragmentSpecResolver`  which is of type `RelayModernFragmentSpecResolver`
 2. `RelayModernFragmentSpecResolver` has a list of selector resolvers, which are of type `SelectorResolver`
-3. a `SelectorResolver` has a property called  `_selector: Selector;`, which is essentially a combination of query node (AST) + Variables. as shown below
-
-
+```
+class SelectorResolver {
+    this._data = snapshot.data;  // it has data
+    this._selector = selector;   // and it knoww how to fetch data from MarkSeepStore
+}    
+```
+3. a selector is
 ![](./images/selector.PNG "a fragment selector")
+
+
