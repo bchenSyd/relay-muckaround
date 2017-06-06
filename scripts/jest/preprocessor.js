@@ -9,7 +9,11 @@
 
 'use strict';
 
+//***************************************************************
+// this is a babel plugin; will be part of babel so cannot be ES6
+// that's why you must provide es5 files (under 'dist' folder)
 const BabelPluginRelay = require('../../dist/babel-plugin-relay');
+//***************************************************************
 
 const assign = require('object-assign');
 const babel = require('babel-core');

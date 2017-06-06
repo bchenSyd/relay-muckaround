@@ -13,7 +13,7 @@
     "prettier": "find . -name node_modules -prune -or -name '*.js' -print | xargs grep -l '@format' | xargs prettier --single-quote --trailing-comma all --no-bracket-spacing --jsx-bracket-same-line --parser flow --write",
     "test": "jest  --no-cache  ",
     "typecheck": "flow check",
-    "debug": "node --debug-brk node_modules/jest/bin/jest.js  --runInBand  "
+    "debug": "node --debug-brk node_modules/jest/bin/jest.js  --no-cache --runInBand  "
   },
   "devDependencies": {
     "babel-cli": "6.24.1",
