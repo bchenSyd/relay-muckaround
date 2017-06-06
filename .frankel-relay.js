@@ -1,1 +1,1 @@
-module.exports = './dist';
+module.exports = '../relay-todo-modern/node_modules';

@@ -96,7 +96,7 @@ const PRODUCTION_HEADER = [
   ' */',
 ].join('\n') + '\n';
 
-const buildDist = function(filename, opts, isProduction) {
+const buildDist = function (filename, opts, isProduction) {
   const webpackOpts = {
     debug: !isProduction,
     externals: [/^[-/a-zA-Z0-9]+$/],
@@ -134,7 +134,7 @@ const buildDist = function(filename, opts, isProduction) {
       })
     );
   }
-  return webpackStream(webpackOpts, null, function(err, stats) {
+  return webpackStream(webpackOpts, null, function (err, stats) {
     if (err) {
       throw new gulpUtil.PluginError('webpack', err);
     }
@@ -148,7 +148,8 @@ const buildDist = function(filename, opts, isProduction) {
 const PACKAGES = 'packages';
 const DIST = require('./.frankel-relay');
 
-const builds = [
+//['babel-plugin-relay', 'react-relay','relay-compiler', 'relay-runtime']
+let builds = [
   {
     package: 'babel-plugin-relay',
     exports: {
@@ -232,11 +233,13 @@ const builds = [
   },
 ];
 
-gulp.task('clean', function() {
-  return del(DIST, {force: true});
+//builds = builds.slice(1,2); //only build 'react-relay'
+
+gulp.task('clean', function () {
+  //return del(DIST, {force: true});
 });
 
-gulp.task('modules', function() {
+gulp.task('modules', function () {
   return es.merge(builds.map(build =>
     gulp.src([
       '*' + PACKAGES + '/' + build.package + '/**/*.js',
@@ -254,7 +257,7 @@ gulp.task('modules', function() {
   ));
 });
 
-gulp.task('copy-files', function() {
+gulp.task('copy-files', function () {
   return es.merge(builds.map(build =>
     gulp.src([
       'LICENSE',
@@ -266,19 +269,21 @@ gulp.task('copy-files', function() {
   ));
 });
 
-gulp.task('exports', ['copy-files', 'modules'], function() {
+gulp.task('exports', ['copy-files', 'modules'], function () {
   builds.map(build =>
-    Object.keys(build.exports).map(exportName =>
+    Object.keys(build.exports).map(exportName => {
+      console.log(`fs.writeFileSync(${path.join(DIST, build.package, exportName + '.js')},'facebook disclaimer.... module.exports = require('./lib/${build.exports[exportName]}');`);
       fs.writeFileSync(
         path.join(DIST, build.package, exportName + '.js'),
         PRODUCTION_HEADER +
         `\nmodule.exports = require('./lib/${build.exports[exportName]}');`
       )
+    }
     )
   );
 });
 
-gulp.task('bins', ['modules'], function() {
+gulp.task('bins', ['modules'], function () {
   const buildsWithBins = builds.filter(build => build.bins);
   return es.merge(buildsWithBins.map(build =>
     es.merge(build.bins.map(bin =>
@@ -291,7 +296,7 @@ gulp.task('bins', ['modules'], function() {
   ));
 });
 
-gulp.task('bundles', ['modules'], function() {
+gulp.task('bundles', ['modules'], function () {
   return es.merge(builds.map(build =>
     es.merge(build.bundles.map(bundle =>
       gulp.src(path.join(DIST, build.package, 'lib', bundle.entry))
@@ -303,7 +308,7 @@ gulp.task('bundles', ['modules'], function() {
   ));
 });
 
-gulp.task('bundles:min', ['modules'], function() {
+gulp.task('bundles:min', ['modules'], function () {
   return es.merge(builds.map(build =>
     es.merge(build.bundles.map(bundle =>
       gulp.src(path.join(DIST, build.package, 'lib', bundle.entry))
@@ -314,10 +319,11 @@ gulp.task('bundles:min', ['modules'], function() {
   ));
 });
 
-gulp.task('watch', function() {
-  gulp.watch(PACKAGES + '/**/*.js', ['exports', 'bundles']);
+gulp.task('default', ['deploy'], function () {
+  gulp.watch(PACKAGES + '/**/*.js', ['exports']);
 });
 
-gulp.task('default', function(cb) {
-  runSequence('clean', ['exports', 'bins', 'bundles', 'bundles:min'], cb);
+gulp.task('deploy', function (cb) {
+  //runSequence('clean', ['exports', 'bins', 'bundles', 'bundles:min'], cb);
+  runSequence('clean', ['exports'], cb);
 });
