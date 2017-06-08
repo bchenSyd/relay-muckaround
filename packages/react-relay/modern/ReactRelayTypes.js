@@ -45,7 +45,6 @@ export type RelayRefetchProp = RelayProp & {
     callback: ?(error: ?Error) => void,
     options?: RefetchOptions,
   ) => Disposable,
-  getVariables: () => Variables,
 };
 
 export type RefetchOptions = {
