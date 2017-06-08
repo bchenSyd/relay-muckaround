@@ -184,6 +184,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
       return {
         environment: relay.environment,
         refetch: this._refetch,
+        getVariables: this._getFragmentVariables,
       };
     }
 
@@ -197,15 +198,8 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
       this.setState({data: this._resolver.resolve()}, profiler.stop);
     };
 
-    _getFragmentVariables(): Variables {
-      const {
-        getVariablesFromObject,
-      } = this.context.relay.environment.unstable_internal;
-      return getVariablesFromObject(
-        this.context.relay.variables,
-        fragments,
-        this.props,
-      );
+    _getFragmentVariables = (): Variables => {
+        return this._resolver.getVariables();
     }
 
     _refetch = (
