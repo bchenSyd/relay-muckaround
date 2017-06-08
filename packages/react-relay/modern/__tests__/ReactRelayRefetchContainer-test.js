@@ -857,7 +857,7 @@ describe('ReactRelayRefetchContainer', () => {
         );
       });
 
-      it.only('getVariables() should return the correct value', async () => {
+      it('getVariables() should return the correct value', async () => {
         expect.assertions(2);
         let fragmentVariables = getVariables();
         expect(fragmentVariables).toEqual({
@@ -879,10 +879,11 @@ describe('ReactRelayRefetchContainer', () => {
         });
         fragmentVariables = getVariables();
         expect(fragmentVariables).toEqual({
-          id: 4,
+          id: '4',
           cond: false
         });
       });
-    });
+
+  });
 
 });

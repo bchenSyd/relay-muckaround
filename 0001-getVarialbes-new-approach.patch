@@ -1,0 +1,336 @@
+From ea95b65e56e4bff9598b5904ac54986e2f9aacb4 Mon Sep 17 00:00:00 2001
+From: Bo Chen <bo.chen@kindredgroup.com>
+Date: Thu, 8 Jun 2017 12:27:39 +1000
+Subject: [PATCH] getVarialbes() new approach
+
+---
+ .../environment/RelayCombinedEnvironmentTypes.js   |  5 ++
+ .../environment/RelayFragmentSpecResolver.js       | 21 ++++++
+ .../modern/ReactRelayRefetchContainer.js           | 12 +---
+ packages/react-relay/modern/ReactRelayTypes.js     |  1 +
+ .../__tests__/ReactRelayRefetchContainer-test.js   | 84 +++++++++++++++++++++-
+ .../store/RelayModernFragmentSpecResolver.js       | 21 ++++++
+ 6 files changed, 132 insertions(+), 12 deletions(-)
+
+diff --git a/packages/react-relay/classic/environment/RelayCombinedEnvironmentTypes.js b/packages/react-relay/classic/environment/RelayCombinedEnvironmentTypes.js
+index 7919fece..c930425c 100644
+--- a/packages/react-relay/classic/environment/RelayCombinedEnvironmentTypes.js
++++ b/packages/react-relay/classic/environment/RelayCombinedEnvironmentTypes.js
+@@ -115,6 +115,11 @@ export interface FragmentSpecResolver {
+    * `resolve()` to get the updated results.
+    */
+   setVariables(variables: Variables): void,
++
++  /**
++   * get the variables that currently being used
++   */
++  getVariables(): Variables,
+ }
+ 
+ export type CFragmentMap<TFragment> = {[key: string]: TFragment};
+diff --git a/packages/react-relay/classic/environment/RelayFragmentSpecResolver.js b/packages/react-relay/classic/environment/RelayFragmentSpecResolver.js
+index 8d6c29b6..e05d7497 100644
+--- a/packages/react-relay/classic/environment/RelayFragmentSpecResolver.js
++++ b/packages/react-relay/classic/environment/RelayFragmentSpecResolver.js
+@@ -167,6 +167,16 @@ class RelayFragmentSpecResolver implements FragmentSpecResolver {
+     this._stale = true;
+   }
+ 
++  getVariables(): Variables {
++      let variables = {};
++      forEachObject(this._resolvers, resolver => {
++        if (resolver) {
++          Object.assign(variables, resolver.getVariables());
++        }
++      });
++      return variables;
++  }
++
+   _onChange = (): void => {
+     this._stale = true;
+     this._callback();
+@@ -234,6 +244,10 @@ class SelectorResolver {
+     this.setSelector(selector);
+   }
+ 
++  getVariables(): Variables {
++     return this._selector.variables;
++  }
++
+   _onChange = (snapshot: Snapshot): void => {
+     this._data = snapshot.data;
+     this._callback();
+@@ -312,6 +326,13 @@ class SelectorListResolver {
+     this._stale = true;
+   }
+ 
++  getVariables(): Variables {
++    if (this._resolvers.length > 0 ) {
++      return this._resolvers[0].getVariables();
++    }
++    return {};
++  }
++  
+   _onChange = (data: ?Object): void => {
+     this._stale = true;
+     this._callback();
+diff --git a/packages/react-relay/modern/ReactRelayRefetchContainer.js b/packages/react-relay/modern/ReactRelayRefetchContainer.js
+index 88d8dc40..152a5baa 100644
+--- a/packages/react-relay/modern/ReactRelayRefetchContainer.js
++++ b/packages/react-relay/modern/ReactRelayRefetchContainer.js
+@@ -184,6 +184,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
+       return {
+         environment: relay.environment,
+         refetch: this._refetch,
++        getVariables: this._getFragmentVariables,
+       };
+     }
+ 
+@@ -197,15 +198,8 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
+       this.setState({data: this._resolver.resolve()}, profiler.stop);
+     };
+ 
+-    _getFragmentVariables(): Variables {
+-      const {
+-        getVariablesFromObject,
+-      } = this.context.relay.environment.unstable_internal;
+-      return getVariablesFromObject(
+-        this.context.relay.variables,
+-        fragments,
+-        this.props,
+-      );
++    _getFragmentVariables = (): Variables => {
++        return this._resolver.getVariables();
+     }
+ 
+     _refetch = (
+diff --git a/packages/react-relay/modern/ReactRelayTypes.js b/packages/react-relay/modern/ReactRelayTypes.js
+index 7159f846..310bf5f7 100644
+--- a/packages/react-relay/modern/ReactRelayTypes.js
++++ b/packages/react-relay/modern/ReactRelayTypes.js
+@@ -45,6 +45,7 @@ export type RelayRefetchProp = RelayProp & {
+     callback: ?(error: ?Error) => void,
+     options?: RefetchOptions,
+   ) => Disposable,
++  getVariables: Variables,
+ };
+ 
+ export type RefetchOptions = {
+diff --git a/packages/react-relay/modern/__tests__/ReactRelayRefetchContainer-test.js b/packages/react-relay/modern/__tests__/ReactRelayRefetchContainer-test.js
+index 9f9ad21f..59b4925e 100644
+--- a/packages/react-relay/modern/__tests__/ReactRelayRefetchContainer-test.js
++++ b/packages/react-relay/modern/__tests__/ReactRelayRefetchContainer-test.js
+@@ -29,9 +29,11 @@ describe('ReactRelayRefetchContainer', () => {
+   let TestContainer;
+   let UserFragment;
+   let UserQuery;
++  let RefetchQuery;
+ 
+   let environment;
+   let refetch;
++  let getVariables;
+   let render;
+   let variables;
+   let ContextGetter;
+@@ -82,7 +84,7 @@ describe('ReactRelayRefetchContainer', () => {
+     jest.addMatchers(RelayModernTestUtils.matchers);
+ 
+     environment = createMockEnvironment();
+-    ({UserFragment, UserQuery} = environment.mock.compile(
++    ({UserFragment, UserQuery, RefetchQuery} = environment.mock.compile(
+       `
+       query UserQuery(
+         $id: ID!
+@@ -98,6 +100,14 @@ describe('ReactRelayRefetchContainer', () => {
+         id
+         name @include(if: $cond)
+       }
++
++      query RefetchQuery(
++        $id: ID!, $cond: Boolean!
++      ) {
++        node(id: $id) {
++          ...UserFragment @arguments(cond: $cond)
++        }
++      }
+     `,
+     ));
+ 
+@@ -118,6 +128,7 @@ describe('ReactRelayRefetchContainer', () => {
+ 
+     render = jest.fn(props => {
+       refetch = props.relay.refetch;
++      getVariables = props.relay.getVariables;
+       return <ContextGetter />;
+     });
+     variables = {};
+@@ -180,6 +191,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+       user: null,
+     });
+@@ -199,6 +211,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+       user: null,
+     });
+@@ -238,6 +251,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+     });
+     // Subscribes for updates
+@@ -295,6 +309,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+     });
+   });
+@@ -333,6 +348,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+     });
+     // Container subscribes for updates on new props
+@@ -378,6 +394,7 @@ describe('ReactRelayRefetchContainer', () => {
+       relay: {
+         environment: jasmine.any(Object),
+         refetch: jasmine.any(Function),
++        getVariables: jasmine.any(Function),
+       },
+     });
+     // Container subscribes for updates on new props
+@@ -802,9 +819,70 @@ describe('ReactRelayRefetchContainer', () => {
+         updateVariables
+       );
+ 
+-      expect(relayContext.environment).toBe(environment);
++       expect(relayContext.environment).toBe(environment);
+       expect(relayContext.variables).toEqual(updateVariables);
+     });
+ 
+-  });
++    });
++
++
++  describe('getVarialbes()', () => {
++      let instance;
++      let references;
++
++      beforeEach(() => {
++        TestContainer = ReactRelayRefetchContainer.createContainer(
++          TestComponent,
++          {
++            user: () => UserFragment,
++          },
++          RefetchQuery,
++        );
++        references = [];
++        environment.retain = () => {
++          const dispose = jest.fn();
++          const ref = {dispose};
++          references.push(ref);
++          return ref;
++        };
++        const userPointer = environment.lookup({
++          dataID: ROOT_ID,
++          node: UserQuery.fragment,
++          variables: {id: '4'},
++        }).data.node;
++        instance = ReactTestRenderer.create(
++          <ContextSetter environment={environment} variables={variables}>
++            <TestContainer user={userPointer} />
++          </ContextSetter>,
++        );
++      });
++
++      it.only('getVariables() should return the correct value', async () => {
++        expect.assertions(2);
++        let fragmentVariables = getVariables();
++        expect(fragmentVariables).toEqual({
++          cond: true
++        });
++        const callback = jest.fn();
++        variables = {
++          cond: false,
++          id: '4',
++        };
++        refetch(variables, null, callback);
++        await environment.mock.resolve(RefetchQuery, {
++          data: {
++            node: {
++              id: '4',
++              __typename: 'User',
++            },
++          },
++        });
++        fragmentVariables = getVariables();
++        expect(fragmentVariables).toEqual({
++          id: 4,
++          cond: false
++        });
++      });
++    });
++
+ });
+diff --git a/packages/relay-runtime/store/RelayModernFragmentSpecResolver.js b/packages/relay-runtime/store/RelayModernFragmentSpecResolver.js
+index 37e0d479..0558fd10 100644
+--- a/packages/relay-runtime/store/RelayModernFragmentSpecResolver.js
++++ b/packages/relay-runtime/store/RelayModernFragmentSpecResolver.js
+@@ -177,6 +177,16 @@ class RelayModernFragmentSpecResolver implements FragmentSpecResolver {
+     this._stale = true;
+   }
+ 
++  getVariables(): Variables {
++    let variables = {};
++    forEachObject(this._resolvers, resolver => {
++      if (resolver) {
++        Object.assign(variables, resolver.getVariables());
++      }
++    });
++    return variables;
++  }
++
+   _onChange = (): void => {
+     this._stale = true;
+     this._callback();
+@@ -239,6 +249,10 @@ class SelectorResolver {
+     this.setSelector(selector);
+   }
+ 
++  getVariables(): Variables {
++     return this._selector.variables;
++  }
++
+   _onChange = (snapshot: Snapshot): void => {
+     this._data = snapshot.data;
+     this._callback();
+@@ -317,6 +331,13 @@ class SelectorListResolver {
+     this._stale = true;
+   }
+ 
++  getVariables(): Variables {
++    if (this._resolvers.length > 0 ) {
++      return this._resolvers[0].getVariables();
++    }
++    return {};
++  }
++
+   _onChange = (data: ?Object): void => {
+     this._stale = true;
+     this._callback();
+-- 
+2.12.2.windows.1
+
