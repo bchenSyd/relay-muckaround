@@ -12,8 +12,6 @@
 
 'use strict';
 
-jest.autoMockOff();
-
 const React = require('React');
 const ReactRelayRefetchContainer = require('ReactRelayRefetchContainer');
 const ReactRelayPropTypes = require('ReactRelayPropTypes');
@@ -81,7 +79,7 @@ describe('ReactRelayRefetchContainer', () => {
 
   beforeEach(() => {
     jest.resetModules();
-    jest.addMatchers(RelayModernTestUtils.matchers);
+    expect.extend(RelayModernTestUtils.matchers);
 
     environment = createMockEnvironment();
     ({UserFragment, UserQuery, RefetchQuery} = environment.mock.compile(
@@ -696,7 +694,6 @@ describe('ReactRelayRefetchContainer', () => {
       expect(relayContext.variables).toEqual(refetchVariables);
     });
 
-
     it('does not update variables on failure', async () => {
       expect.assertions(4);
       expect(render.mock.calls.length).toBe(1);
@@ -812,19 +809,15 @@ describe('ReactRelayRefetchContainer', () => {
 
       const updateVariables = {
         cond: true,
-        id: '842472'
+        id: '842472',
       };
-      instance.getInstance().setContext(
-        environment,
-        updateVariables
-      );
+      instance.getInstance().setContext(environment, updateVariables);
 
        expect(relayContext.environment).toBe(environment);
       expect(relayContext.variables).toEqual(updateVariables);
     });
 
     });
-
 
   describe('getVarialbes()', () => {
       let instance;
@@ -883,6 +876,7 @@ describe('ReactRelayRefetchContainer', () => {
           cond: false
         });
       });
+
 
   });
 

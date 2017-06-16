@@ -123,7 +123,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
         this._localVariables = null;
         this._relayContext = {
           environment: relay.environment,
-          variables: relay.variables
+          variables: relay.variables,
         };
         this._resolver = createFragmentSpecResolver(
           relay,
@@ -230,7 +230,7 @@ function createContainerWithFragments<TBase: ReactClass<*>>(
         this._pendingRefetch = null;
         this._relayContext = {
           environment: this.context.relay.environment,
-          variables: fragmentVariables
+          variables: fragmentVariables,
         };
         callback && callback();
         this._resolver.setVariables(fragmentVariables);
