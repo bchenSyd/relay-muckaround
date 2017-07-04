@@ -9,4 +9,5 @@ npm-debug.log
 /website/src/relay/prototyping
 .idea
 .frankel-relay
+yarn.lock
 
